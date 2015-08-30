@@ -61,7 +61,7 @@ object RunGraph extends Serializable {
     val nameCID = topicGraph.vertices.innerJoin(connectedComponentGraph.vertices) {
       (topicId, name, componentId) => (name, componentId)
     }
-    val c1 = nameCID.filter(x => x._2._2 == componentCounts(1)._2)
+    val c1 = nameCID.filter(x => x._2._2 == componentCounts(1)._1)
     c1.collect().foreach(x => println(x._2._1))
 
     val hiv = topics.filter(_.contains("HIV")).countByValue
@@ -217,7 +217,7 @@ object RunGraph extends Serializable {
     val YN = YA - YY
     val NY = YB - YY
     val NN = T - NY - YN - YY
-    val inner = (YY * NN - YN * NY) - T / 2.0
+    val inner = math.abs(YY * NN - YN * NY) - T / 2.0
     T * math.pow(inner, 2) / (YA * NA * YB * NB)
   }
 }

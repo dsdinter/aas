@@ -25,7 +25,7 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.Map
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.mutable.HashMap
@@ -56,21 +56,22 @@ object ParseWikipedia {
     val idfs = inverseDocumentFrequencies(docFreqs, numDocs)
 
     // Maps terms to their indices in the vector
-    val termIds = idfs.keys.zipWithIndex.toMap
+    val idTerms = idfs.keys.zipWithIndex.toMap
+    val termIds = idTerms.map(_.swap)
 
     val bIdfs = sc.broadcast(idfs).value
-    val bTermIds = sc.broadcast(termIds).value
+    val bIdTerms = sc.broadcast(idTerms).value
 
     val vecs = docTermFreqs.map(_._2).map(termFreqs => {
-      val docTotalTerms = termFreqs.values().sum
+      val docTotalTerms = termFreqs.values.sum
       val termScores = termFreqs.filter {
-        case (term, freq) => bTermIds.containsKey(term)
+        case (term, freq) => bIdTerms.contains(term)
       }.map{
-        case (term, freq) => (bTermIds(term), bIdfs(term) * termFreqs(term) / docTotalTerms)
+        case (term, freq) => (bIdTerms(term), bIdfs(term) * termFreqs(term) / docTotalTerms)
       }.toSeq
-      Vectors.sparse(bTermIds.size, termScores)
+      Vectors.sparse(bIdTerms.size, termScores)
     })
-    (vecs, termIds.map(_.swap), docIds, idfs)
+    (vecs, termIds, docIds, idfs)
   }
 
   def documentFrequencies(docTermFreqs: RDD[HashMap[String, Int]]): HashMap[String, Int] = {
@@ -143,7 +144,8 @@ object ParseWikipedia {
     pipeline.annotate(doc)
     val lemmas = new ArrayBuffer[String]()
     val sentences = doc.get(classOf[SentencesAnnotation])
-    for (sentence <- sentences; token <- sentence.get(classOf[TokensAnnotation])) {
+    for (sentence <- sentences.asScala;
+         token <- sentence.get(classOf[TokensAnnotation]).asScala) {
       val lemma = token.get(classOf[LemmaAnnotation])
       if (lemma.length > 2 && !stopWords.contains(lemma) && isOnlyLetters(lemma)) {
         lemmas += lemma.toLowerCase

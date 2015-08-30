@@ -8,7 +8,7 @@
   <modelVersion>4.0.0</modelVersion>
   <groupId>com.cloudera.datascience</groupId>
   <artifactId>spark-book-parent</artifactId>
-  <version>1.0.0</version>
+  <version>1.0.1</version>
   <packaging>pom</packaging>
   <name>Advanced Analytics with Spark</name>
 
@@ -189,7 +189,7 @@
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <hadoop.version>2.6.0</hadoop.version>
     <java.version>1.7</java.version>
-    <maven.version.min>3.1.1</maven.version.min>
+    <maven.version.min>3.0.5</maven.version.min>
     <scala.minor.version>2.10</scala.minor.version>
     <scala.complete.version>${scala.minor.version}.4</scala.complete.version>
     <spark.version>1.2.2</spark.version>
@@ -225,7 +225,7 @@
               <id>enforce</id>
               <configuration>
                 <rules>
-                  <dependencyConvergence />
+                  <requireModuleConvergence/>
                   <requireMavenVersion>
                     <version>${maven.version.min}</version>
                   </requireMavenVersion>
@@ -241,9 +241,54 @@
           </executions>
         </plugin>
         <plugin>
+          <groupId>org.apache.rat</groupId>
+          <artifactId>apache-rat-plugin</artifactId>
+          <version>0.11</version>
+          <configuration>
+            <excludes>
+              <exclude>**/*.iml</exclude>
+              <exclude>**/*.md</exclude>
+              <exclude>**/*.txt</exclude>
+              <exclude>**/*.geojson</exclude>
+              <exclude>**/target/**</exclude>
+              <exclude>**/dependency-reduced-pom.xml</exclude>
+              <exclude>.travis.yml</exclude>
+            </excludes>
+            <licenses>
+              <license implementation="org.apache.rat.analysis.license.SimplePatternBasedLicense">
+                <patterns>
+                  <pattern>Copyright 2015 Sanford Ryza, Uri Laserson, Sean Owen and Joshua Wills</pattern>
+                </patterns>
+              </license>
+            </licenses>
+          </configuration>
+          <executions>
+            <execution>
+              <phase>verify</phase>
+              <goals>
+                <goal>check</goal>
+              </goals>
+            </execution>
+          </executions>
+          <!-- workaround for Xerces warnings -->
+          <dependencies>
+            <dependency>
+              <groupId>org.apache.maven.doxia</groupId>
+              <artifactId>doxia-core</artifactId>
+              <version>1.6</version>
+              <exclusions>
+                <exclusion>
+                  <groupId>xerces</groupId>
+                  <artifactId>xercesImpl</artifactId>
+                </exclusion>
+              </exclusions>
+            </dependency>
+          </dependencies>
+        </plugin>
+        <plugin>
           <groupId>net.alchim31.maven</groupId>
           <artifactId>scala-maven-plugin</artifactId>
-          <version>3.2.0</version>
+          <version>3.2.2</version>
           <configuration>
             <scalaVersion>${scala.complete.version}</scalaVersion>
             <args>
@@ -306,6 +351,7 @@
             <descriptorRefs>
               <descriptorRef>jar-with-dependencies</descriptorRef>
             </descriptorRefs>
+            <recompressZippedFiles>false</recompressZippedFiles>
           </configuration>
           <executions>
             <execution>
@@ -352,6 +398,14 @@
     </pluginManagement>
     <plugins>
       <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-enforcer-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.rat</groupId>
+        <artifactId>apache-rat-plugin</artifactId>
+      </plugin>
+      <plugin>
         <groupId>net.alchim31.maven</groupId>
         <artifactId>scala-maven-plugin</artifactId>
       </plugin>
@@ -368,7 +422,7 @@
     <profile>
       <id>spark-1.4</id>
       <properties>
-        <spark.version>1.4.0</spark.version>
+        <spark.version>1.4.1</spark.version>
       </properties>
     </profile>
     <profile>
